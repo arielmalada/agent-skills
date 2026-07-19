@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+
+# project-specific local overlays — never commit
+skills/*/references/*-specifics.md
+skills/*/examples/
