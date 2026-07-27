@@ -1,0 +1,9 @@
+# Shell scripts must keep LF in the working tree even on Windows checkouts.
+# With core.autocrlf=true, git rewrites them to CRLF and Linux bash then fails with
+#   syntax error near unexpected token `$'in\r''
+# which makes install.sh unrunnable from WSL against the Windows working tree.
+*.sh text eol=lf
+
+# Skill/agent content is normalized to LF in the repo; nothing executes it, so the
+# working-tree ending is left to the platform.
+*.md text
