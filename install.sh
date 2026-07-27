@@ -142,7 +142,7 @@ do_verify() {
   #
   # Externals are expected to be absent from this repo — keep this list in step with
   # README "External dependencies".
-  externals="write-e2e-test unit-test create-storybook-story ticket-fetch ac-verify feature-context"
+  externals="create-storybook-story ticket-fetch ac-verify feature-context"
   local_skills=""
   for d in "$REPO"/skills/*/; do local_skills="$local_skills $(basename "$d")"; done
 

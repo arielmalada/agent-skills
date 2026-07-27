@@ -5,7 +5,7 @@ Personal agent skills and subagent definitions, usable from both **Claude Code**
 ## Layout
 
 ```
-skills/<name>/SKILL.md              12 skills (frontmatter: name + description only — portable)
+skills/<name>/SKILL.md              14 skills (frontmatter: name + description only — portable)
 skills/<name>/references/           generic reference material + Claude-Code-only Workflow templates
 agents/claude-code/*.md             3 subagent definitions (~/.claude/agents format)
 agents/opencode/*.md                the same agents in opencode format (mode: subagent)
@@ -27,13 +27,15 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 
 **Quality primitives** (replacements for Claude Code's built-in `code-review` / `verify` / `simplify`, usable in any harness): `adversarial-review`, `exercise-change`, `polish-code`. Conductors reference these names only.
 
-**Supporting**: `commit`, `create-pr`, `test-layer-review`, `responsive-design`, `validate-in-browser`.
+**Test authoring**: `write-e2e-test` (Playwright specs, POMs, fixtures) and `unit-test` (Jest/RTL, Equivalence Partitioning) hold the per-layer methodology; `test-layer-review` decides placement for tests that already exist. `author-tests` sequences all three.
+
+**Supporting**: `commit`, `create-pr`, `responsive-design`, `validate-in-browser`.
 
 **Agents**: `figma-reader` (cost-isolated design reading), `playwright-qa` (cost-isolated browser QA; auth arrives via an injection block from the dispatching skill's overlay), `ui-design-reviewer` (7-category view review; conventions via injection block).
 
 ## External dependencies
 
-The conductors reference some skills by role that are expected to exist per project (ticket-fetch, AC-verify, e2e-authoring/run, story-authoring, translation tooling). Their concrete names go in each project's overlay roster; without them the skills fall back to doing the work inline.
+The conductors reference some skills by role that are expected to exist per project (ticket-fetch, AC-verify, e2e-run, story-authoring, translation tooling). Their concrete names go in each project's overlay roster; without them the skills fall back to doing the work inline. Keep this list in step with the `externals` variable in `install.sh`.
 
 ## Install
 
