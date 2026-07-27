@@ -22,7 +22,7 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 
 ## The skills
 
-**Ticket conductors** (invoke each other): `implement-feature` → `author-tests` → `validate-change` (+ `create-pr`); `debug-issue` cross-links all of them.
+**Ticket conductors** (invoke each other, **under review**): `implement-feature` → `author-tests` → `validate-change` (+ `create-pr`); `debug-issue` cross-links all of them.
 
 **Quality primitives** (replacements for Claude Code's built-in `code-review` / `verify` / `simplify`, usable in any harness): `adversarial-review`, `exercise-change`, `polish-code`. Conductors reference these names only.
 
