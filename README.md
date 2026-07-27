@@ -9,7 +9,6 @@ skills/<name>/SKILL.md              14 skills (frontmatter: name + description o
 skills/<name>/references/           generic reference material + Claude-Code-only Workflow templates
 agents/claude-code/*.md             3 subagent definitions (~/.claude/agents format)
 agents/opencode/*.md                the same agents in opencode format (mode: subagent)
-install.sh                          symlink installer — see below
 ```
 
 ## The overlay pattern (keeps this repo generic)
@@ -35,21 +34,11 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 
 ## External dependencies
 
-The conductors reference some skills by role that are expected to exist per project (ticket-fetch, AC-verify, e2e-run, story-authoring, translation tooling). Their concrete names go in each project's overlay roster; without them the skills fall back to doing the work inline. Keep this list in step with the `externals` variable in `install.sh`.
+The conductors reference some skills by role that are expected to exist per project (ticket-fetch, AC-verify, e2e-run, story-authoring, translation tooling). Their concrete names go in each project's overlay roster; without them the skills fall back to doing the work inline. 
 
 ## Install
 
-```bash
-./install.sh            # symlinks: skills+agents into ~/.claude, opencode agents into ~/.config/opencode/agent
-./install.sh --verify   # checks symlinks, cross-skill reference targets, PROJECT=<path> collisions
-./install.sh --dry-run  # preview
-./install.sh --uninstall
-```
-
-- **Claude Code** picks up `~/.claude/skills/*` and `~/.claude/agents/*`.
-- **opencode** discovers the same skills natively via `~/.claude/skills`; agents install to `~/.config/opencode/agent/`. MCP servers (Figma, Playwright, translation tooling) are configured in `opencode.json` separately — skills/agents STOP gracefully when they're absent.
-- Alternatively, copy skill dirs instead of symlinking and add overlays next to them — the contents are location-independent.
-- **Windows (Git Bash):** `ln -s` silently *copies* unless native symlinks are enabled — the copies go stale and `--verify` rejects them. Enable Developer Mode (or run elevated) and `export MSYS=winsymlinks:nativestrict` before installing; the installer now reports `COPIED (not linked)` when it hits this.
+Just copy and paste, or ask your agent to install it for you
 
 ## Harness matrix
 
