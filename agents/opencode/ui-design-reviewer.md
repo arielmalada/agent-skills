@@ -6,7 +6,7 @@ description: >-
   interaction/states, and content/i18n. Returns a triaged
   critical/recommended/minor report. Dispatch after view-component changes.
 mode: subagent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-5
 tools:
   write: false
   edit: false

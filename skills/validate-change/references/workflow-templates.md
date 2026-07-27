@@ -3,8 +3,12 @@
 > **Claude Code Workflow tool only.** In any other harness this file's scripts do not run — reuse the embedded prompt prose as plain subagent prompts instead.
 
 Runnable scripts for the Workflow tool. **The Workflow tool requires explicit user opt-in**
-("use a workflow", "ultracode", or a skill that mandates it) — for routine tickets use
-direct Agent-tool fan-out instead (multiple Agent calls in one message run concurrently).
+("use a workflow", "ultracode", or a skill that mandates it) **AND presence in the session's
+tool inventory** — verify at use time; subagent sessions in particular lack it, and without it
+these scripts are inert: reuse their embedded prompts as plain subagent prompts.
+
+For routine tickets use direct Agent-tool fan-out instead (multiple Agent calls in one message
+run concurrently).
 
 Rules these scripts obey (and any edit must keep obeying): `meta` is a pure literal; no
 `Date.now()` / `Math.random()` / argless `new Date()` (pass timestamps via `args`); agents
@@ -21,8 +25,8 @@ base ref, and the repo traps it needs (see the specifics overlay).
 
 **When to use:** large or high-stakes diffs (money flow, permission gates, shared-component
 changes) where per-dimension finders plus per-finding refuters earn their cost.
-**When NOT to use:** routine single-feature diffs — invoke the `code-review` skill inline
-instead; the fan-out overhead exceeds the diff. `pipeline()` means dimension A's findings
+**When NOT to use:** routine single-feature diffs — invoke the `adversarial-review` skill in
+its routine (inline) mode instead; the fan-out overhead exceeds the diff. `pipeline()` means dimension A's findings
 get verified while dimension B is still reviewing.
 
 ```js
@@ -196,8 +200,8 @@ const clusters = args.clusters.concat([{
     name: 'cross-cutting gap hunt',
     criteria: [
         'Locale parity: every new translation key exists in every locale file (paths + locale set from the specifics overlay)',
-        'Entity symmetry: if share got the change, property did too (unless the AC is explicit about one)',
-        'Party type: behavior correct for both person and organization parties',
+        'Entity symmetry: if one entity variant got the change, its siblings did too (the project axes are in the specifics overlay) — unless the AC is explicit about single-variant scope',
+        'Actor/party type: behavior correct for every actor type the domain supports (axes in the specifics overlay)',
         'Permission gates: gate names exist in the project permission catalog (path from the specifics overlay) and gated/ungated paths both behave',
         'Test coverage: a spec or unit test guards each AC behavior'
     ]

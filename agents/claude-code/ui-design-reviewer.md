@@ -1,6 +1,34 @@
 ---
 name: ui-design-reviewer
-description: "Use this agent when a `.view.tsx` component has been created or modified. It should be triggered automatically after any changes to view components to ensure they comply with web design guidelines, accessibility standards, and project-specific UI conventions.\\n\\n<example>\\nContext: The user has just created a new view component for a feature.\\nuser: \"Create a new ProductCard view component that displays a listing with image, price, and title\"\\nassistant: \"Here is the ProductCard.view.tsx component: \"\\n<function call omitted for brevity>\\n<commentary>\\nSince a new .view.tsx component was created, use the Task tool to launch the ui-design-reviewer agent to review the UI implementation against design guidelines.\\n</commentary>\\nassistant: \"Now let me use the ui-design-reviewer agent to review the UI design quality of this new component.\"\\n</example>\\n\\n<example>\\nContext: The user has edited an existing view component.\\nuser: \"Update the ListingHeader.view.tsx to add a new badge for featured listings\"\\nassistant: \"I've updated the ListingHeader.view.tsx component with the featured badge: \"\\n<function call omitted for brevity>\\n<commentary>\\nSince a .view.tsx file was modified, use the Task tool to launch the ui-design-reviewer agent to verify the changes follow design guidelines.\\n</commentary>\\nassistant: \"Let me now run the ui-design-reviewer agent to check the updated component against design guidelines.\"\\n</example>"
+description: |
+  Reviews recently created or modified display/view components (a `.view.tsx` naming
+  convention marks them in many projects) against a 7-category framework: visual
+  hierarchy, typography, color/contrast, accessibility (WCAG 2.1), component
+  architecture, interaction/states, and content/i18n. Returns a triaged
+  critical/recommended/minor report. Dispatch after view-component changes; project
+  conventions arrive via an injection block in the dispatch prompt.
+
+  <example>
+  Context: The user has just created a new view component for a feature.
+  user: "Create a new ProductCard view component that displays a listing with image, price, and title"
+  assistant: "Here is the ProductCard.view.tsx component: "
+  <function call omitted for brevity>
+  <commentary>
+  A new .view.tsx component was created — dispatch the ui-design-reviewer agent to review it against design guidelines.
+  </commentary>
+  assistant: "Now let me use the ui-design-reviewer agent to review the UI design quality of this new component."
+  </example>
+
+  <example>
+  Context: The user has edited an existing view component.
+  user: "Update the ListingHeader.view.tsx to add a new badge for featured listings"
+  assistant: "I've updated the ListingHeader.view.tsx component with the featured badge: "
+  <function call omitted for brevity>
+  <commentary>
+  A .view.tsx file was modified — dispatch the ui-design-reviewer agent to verify the changes follow design guidelines.
+  </commentary>
+  assistant: "Let me now run the ui-design-reviewer agent to check the updated component against design guidelines."
+  </example>
 model: sonnet
 color: green
 ---

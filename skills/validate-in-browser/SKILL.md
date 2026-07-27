@@ -1,14 +1,6 @@
 ---
-name: playwright-qa-validate
-description: >
-  Use to validate a ticket / feature in a live browser with Playwright while
-  keeping token cost low. Triggers on "validate this ticket with playwright",
-  "QA test it in the browser", "run browser validation", "check the feature on the
-  dev/feature env", "verify the new feature in playwright", "playwright QA". It
-  resolves the spec, builds a checklist, and DELEGATES the browser driving to the
-  cost-isolated `playwright-qa` subagent (cheaper model), then synthesises the
-  result. Do NOT use for authoring Playwright spec files (that is an authoring
-  skill's domain, e.g. write-e2e-test).
+name: validate-in-browser
+description: This skill should be used to validate a ticket or feature in a live browser while keeping token cost low — "validate this ticket with playwright", "QA test it in the browser", "run browser validation", "check the feature on the dev/feature env", "verify the new feature in the browser", "playwright QA". Resolves the spec, builds a concrete checklist, and DELEGATES the browser driving to the cost-isolated `playwright-qa` subagent (cheaper model), then synthesises the result in the main thread. Do NOT use for authoring Playwright spec files (an authoring skill's domain, e.g. write-e2e-test), or for runtime verification with no ticket to validate against (exercise-change).
 ---
 
 # Playwright QA Validation (cost-aware)
@@ -68,7 +60,7 @@ re-classify ambiguous findings, cross-check Figma for "real bug vs imprecise spe
 wording," and sanity-check the network-level claims. Produce the final verdict.
 
 ### 6. Offer next actions
-Offer to post a Jira comment, file bug tickets, or hand findings to the PR author.
+Offer to post a tracker comment, file bug tickets, or hand findings to the PR author.
 Confirm before any outward-facing action.
 
 ## Cost hygiene reminders (apply even if you ever drive the browser yourself)

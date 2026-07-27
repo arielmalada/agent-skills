@@ -84,7 +84,8 @@ git log --oneline -5
 ### Step 2: Stage Changes
 
 - If changes are already staged, proceed to step 3
-- If nothing is staged, ask the user what to stage
+- **If a conductor skill invoked this one with an explicit file list** (`implement-feature` commits one pre-sliced unit at a time, and the slice names its files): stage exactly those files and proceed — do not ask. Asking here stalls the pipeline on every unit, and the slice already encodes the answer.
+- Otherwise, if nothing is staged, ask the user what to stage
 - If the user says "all" or "everything", stage specific changed files by name (avoid `git add -A` or `git add .`)
 - Never stage files that likely contain secrets (`.env`, `credentials.json`, etc.)
 

@@ -19,7 +19,7 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 - Overlays are **gitignored** (`skills/*/references/*-specifics.md`, `skills/*/examples/`) — they must never be committed.
 - Each overlay should carry: a skill/agent **roster** (role → concrete name), verified commands + traps, env tables, and any injection blocks the skills say to embed in subagent dispatches.
 - Skills degrade gracefully without an overlay: they say so and derive equivalents from the project's own rules files.
-- Keep one **canonical copy** per fact cluster across overlays (e.g. browser-QA login block in the `playwright-qa-validate` overlay; verification-command traps in the `validate-change` overlay) and point at it from the others — duplicate facts rot.
+- Keep one **canonical copy** per fact cluster across overlays (e.g. browser-QA login block in the `validate-in-browser` overlay; verification-command traps in the `validate-change` overlay) and point at it from the others — duplicate facts rot.
 
 ## The skills
 
@@ -27,7 +27,7 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 
 **Quality primitives** (replacements for Claude Code's built-in `code-review` / `verify` / `simplify`, usable in any harness): `adversarial-review`, `exercise-change`, `polish-code`. Conductors reference these names only.
 
-**Supporting**: `commit`, `create-pr`, `test-layer-review`, `responsive-design`, `playwright-qa-validate`.
+**Supporting**: `commit`, `create-pr`, `test-layer-review`, `responsive-design`, `validate-in-browser`.
 
 **Agents**: `figma-reader` (cost-isolated design reading), `playwright-qa` (cost-isolated browser QA; auth arrives via an injection block from the dispatching skill's overlay), `ui-design-reviewer` (7-category view review; conventions via injection block).
 
@@ -47,6 +47,7 @@ The conductors reference some skills by role that are expected to exist per proj
 - **Claude Code** picks up `~/.claude/skills/*` and `~/.claude/agents/*`.
 - **opencode** discovers the same skills natively via `~/.claude/skills`; agents install to `~/.config/opencode/agent/`. MCP servers (Figma, Playwright, translation tooling) are configured in `opencode.json` separately — skills/agents STOP gracefully when they're absent.
 - Alternatively, copy skill dirs instead of symlinking and add overlays next to them — the contents are location-independent.
+- **Windows (Git Bash):** `ln -s` silently *copies* unless native symlinks are enabled — the copies go stale and `--verify` rejects them. Enable Developer Mode (or run elevated) and `export MSYS=winsymlinks:nativestrict` before installing; the installer now reports `COPIED (not linked)` when it hits this.
 
 ## Harness matrix
 

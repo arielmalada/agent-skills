@@ -2,7 +2,9 @@
 
 > **Claude Code Workflow tool only.** In any other harness this file's scripts do not run — reuse the embedded prompt prose as plain subagent prompts instead.
 
-Complete, runnable scripts for the Workflow tool. **The Workflow tool requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it) — for routine tickets, run the same prompts as direct Agent-tool calls (multiple Agent calls in one message run concurrently). Scripts are plain JavaScript (no TypeScript annotations); `meta` must be a pure literal; never call `Date.now()`, `Math.random()`, or argless `new Date()` inside a script — pass timestamps via `args`.
+Complete, runnable scripts for the Workflow tool. **The Workflow tool requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it) **AND presence in the session's tool inventory** — verify at use time; subagent sessions in particular lack it, and without it these scripts are inert: reuse their embedded prompts as plain subagent prompts.
+
+For routine tickets, run the same prompts as direct Agent-tool calls (multiple Agent calls in one message run concurrently). Scripts are plain JavaScript (no TypeScript annotations); `meta` must be a pure literal; never call `Date.now()`, `Math.random()`, or argless `new Date()` inside a script — pass timestamps via `args`.
 
 ---
 
@@ -19,7 +21,9 @@ export const meta = {
 
 // args: {
 //   ticket: 'TICKET-1234',
+//   repoRoot: '/abs/path/to/repo',
 //   acSummary: 'one-paragraph AC digest',
+//   cheapModel: 'sonnet',   // omit to inherit the session model; id is harness-specific
 //   subsystems: [{ name: 'feature-folder', scope: 'packages/<pkg>/app/features/<feature>/',
 //                  questions: ['Which controller fetches X?', 'Where is the column def for Y?'] }]
 // }
@@ -58,7 +62,7 @@ Answer these questions:
 ${s.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
 Also list existing shared components/helpers in scope that the feature could reuse (check the shared packages the specifics overlay lists).
 Report absolute file paths + key code excerpts (props, signatures, column defs). Locate code — do NOT judge it or propose changes.`,
-        { label: `explore-${s.name}`, phase: 'Fan-out', agentType: 'Explore', model: 'sonnet', schema: mapSchema }
+        { label: `explore-${s.name}`, phase: 'Fan-out', agentType: 'Explore', model: args.cheapModel, schema: mapSchema }
       )
     )
   )
@@ -222,7 +226,11 @@ export const meta = {
 
 // args: {
 //   branch: 'TICKET-1234',
+//   defaultBranch: 'main',            // the repo's default branch — never hardcode it
 //   repoRoot: '/abs/path/to/repo',
+//   lintCmd: 'the fast lint gate command from the specifics overlay',
+//   formatCmd: 'the formatter command from the specifics overlay',
+//   cheapModel: 'sonnet',             // omit to inherit the session model; harness-specific id
 //   conventions: 'paste the convention block: commit format, import rules, locale traps, what not to touch',
 //   units: [{ name: 'view', commitMessage: 'feat: add invoice list view', files: ['/abs/path/A.view.tsx'],
 //             instructions: 'exact spec for this unit' }]
@@ -234,7 +242,7 @@ const implSchema = {
   properties: {
     filesTouched: { type: 'array', items: { type: 'string' } },
     lintClean: { type: 'boolean' },
-    formatted: { type: 'boolean', description: 'yarn dprint fmt run on the touched files' },
+    formatted: { type: 'boolean', description: "the project's formatter run on the touched files" },
     notes: { type: 'string', description: 'deviations from the spec, blockers, translation keys the main thread must add' }
   }
 }
@@ -265,14 +273,14 @@ const results = await pipeline(
   (unit) =>
     agent(
       `Implement ONE commit-sized unit in ${args.repoRoot}.
-First verify: git branch --show-current must print ${args.branch} — if it does not, STOP and report that in notes instead of editing (NEVER edit on master).
+First verify: git branch --show-current must print ${args.branch} — if it does not, STOP and report that in notes instead of editing (NEVER edit on ${args.defaultBranch}).
 You have NO other context — these conventions are binding:
 ${args.conventions}
 Unit spec: ${unit.instructions}
 Files you may touch (absolute): ${unit.files.join(', ')} — do NOT touch anything else, especially not locale JSONs (translations go through the project's translation tooling in the main thread; list needed keys in notes).
-After editing: yarn lint:files <files> must pass, then format with yarn dprint fmt <files>.
+After editing: ${args.lintCmd} must pass on the touched files, then format them with ${args.formatCmd}.
 Do NOT run git add or git commit — parallel commits on the shared branch race; the orchestrator commits after the workflow.`,
-      { label: `impl-${unit.name}`, phase: 'Implement', model: 'sonnet', schema: implSchema }
+      { label: `impl-${unit.name}`, phase: 'Implement', model: args.cheapModel, schema: implSchema }
     ),
   async (impl, unit) => {
     if (!impl || !impl.filesTouched || impl.filesTouched.length === 0) return { unit: unit.name, impl, review: null }
@@ -280,7 +288,7 @@ Do NOT run git add or git commit — parallel commits on the shared branch race;
       `Review the UNCOMMITTED working-tree changes on branch ${args.branch} in ${args.repoRoot}, scoped STRICTLY to: ${unit.files.join(', ')} — run git diff -- <those files> yourself. Other agents may still be editing other files; ignore everything outside your scope.
 Unit spec (what the changes should do): ${unit.instructions}
 Hunt correctness bugs — no style nits. For every candidate finding, trace the actual data flow (would the field really be undefined? is there a guard?) and state the concrete failure scenario. Report EVERY issue you find, including ones you are uncertain about — do NOT filter for confidence or importance; tag each with confidence and severity instead. A downstream judge filters.`,
-      { label: `review-${unit.name}`, phase: 'Review', model: 'sonnet', schema: reviewSchema }
+      { label: `review-${unit.name}`, phase: 'Review', model: args.cheapModel, schema: reviewSchema }
     )
     return { unit: unit.name, impl, review }
   }
@@ -291,7 +299,7 @@ const perUnit = results.filter(Boolean)
 const allFiles = args.units.flatMap((u) => u.files)
 const cross = await agent(
   `Cross-cutting review of ALL uncommitted changes on branch ${args.branch} in ${args.repoRoot}: run git diff -- ${allFiles.join(' ')} yourself. Per-unit reviews already ran — look ONLY for cross-unit issues they cannot see: translation keys referenced but never registered (locale JSONs are intentionally untouched — flag keys the main thread must add via the project's translation tooling), imports between units that don't resolve, inconsistent naming or patterns across units, a convention applied in one unit but not another. Same reporting rule: report everything, tag confidence + severity, do not self-filter.`,
-  { label: 'cross-check', phase: 'Cross-check', model: 'sonnet', schema: reviewSchema }
+  { label: 'cross-check', phase: 'Cross-check', model: args.cheapModel, schema: reviewSchema }
 )
 
 const findings = perUnit
@@ -303,4 +311,4 @@ log(`${findings.length} unfiltered findings — judge in the main thread, then c
 return { findings, unitReports: perUnit.map((r) => ({ unit: r.unit, impl: r.impl })) }
 ```
 
-After the pipeline, in the main thread (session model): judge the unfiltered findings (reviewers deliberately do NOT self-filter — Sonnet follows "only report confirmed" literally and recall drops), fix what's real, add any flagged translation keys via the project's translation tooling, then commit sequentially per unit with the `commit` skill using each unit's `commitMessage`. Then proceed to the `author-tests` hand-off — the pipeline replaces neither the test gate nor `validate-change`.
+After the pipeline, in the main thread (session model): judge the unfiltered findings (reviewers deliberately do NOT self-filter — cheaper models follow "only report confirmed" literally and recall drops), fix what's real, add any flagged translation keys via the project's translation tooling, then commit sequentially per unit with the `commit` skill using each unit's `commitMessage`. Then proceed to the `author-tests` hand-off — the pipeline replaces neither the test gate nor `validate-change`.

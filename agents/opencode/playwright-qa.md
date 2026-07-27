@@ -7,7 +7,7 @@ description: >-
   gather on-page evidence — especially when a task needs MANY Playwright steps.
   Do NOT use it to author Playwright spec files or for tasks that need no browser.
 mode: subagent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-5
 tools:
   write: false
   edit: false

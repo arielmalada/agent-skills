@@ -24,8 +24,8 @@ Project facts (env URLs, run commands, seeding traps, tooling traps) live in a l
 | 2 Evidence | Error, network, commit range, flags/permissions | git, Explore agents |
 | 3 Hypotheses | Fan out investigators with falsification tests | Agent fan-out (or Workflow, opt-in) |
 | 4 Verify cause | Refuters attack the surviving candidate | Agent fan-out |
-| 5 Characterize | Failing spec first, without the Jira-key trap | `write-e2e-test`, `unit-test`, `test-layer-review` |
-| 6 Fix | Minimal change at the root; regression + re-repro | `author-tests` (or `unit-test`/`write-e2e-test`), `verify`, `commit` |
+| 5 Characterize | Failing spec first, without the ticket-key trap | `write-e2e-test`, `unit-test`, `test-layer-review` |
+| 6 Fix | Minimal change at the root; regression + re-repro | `author-tests` (or `unit-test`/`write-e2e-test`), `exercise-change`, `commit` |
 
 ## Phase 0 — Intake
 
@@ -88,7 +88,7 @@ Where the harness supports subagents, dispatch one investigator per hypothesis (
 
 A hypothesis that **survives an honest falsification attempt** graduates to root-cause candidate. Two survivors means the falsification tests were too weak — design a discriminating experiment that only one can pass, and iterate.
 
-**Workflow tool note (Claude Code only):** the Workflow tool requires explicit user opt-in AND presence in the session's tool inventory (verify at use time — subagent sessions in particular lack it); direct subagent fan-out is the default and covers the same ground. For audit-scale investigations (4+ hypotheses, multi-stage refutation, resumability matters) with opt-in, see `references/workflow-templates.md` — full gating details there.
+**The Workflow tool is Claude Code-only, requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it), **and must be present in the session's tool inventory** — verify at use time; subagent sessions in particular lack it, and when it is absent the templates' prompts work as plain subagent prompts. Direct subagent fan-out is the default and covers the same ground. For audit-scale investigations (4+ hypotheses, multi-stage refutation, resumability matters) with opt-in, see `references/workflow-templates.md` — full gating details there.
 
 ## Phase 4 — Adversarially verify the root cause before fixing
 
@@ -114,9 +114,9 @@ When feasible, write the failing spec **before** the fix: it proves the bug is o
 - Keep the fix small; separate commits for spec vs fix vs opportunistic cleanup (and prefer no opportunistic cleanup in a bug PR).
 - **Regression coverage:** invoke the `author-tests` skill — it runs the test gate and sequences `write-e2e-test` / `unit-test` / `test-layer-review` for you. If unavailable, invoke those three directly.
 - **Re-run the original reproduction** — same env, same steps, same user as Phase 1. A green new test proves the test passes; only the original repro closing proves the bug is fixed.
-- For a runtime end-to-end confirmation of the change itself, invoke the `exercise-change` skill (beware name-alike shell commands — some projects ship a MUTATING `verify` script; the read-only gate is in the specifics overlay). For full ticket-level validation before a PR, invoke `validate-change`.
+- For a runtime end-to-end confirmation of the change itself, invoke the `exercise-change` skill (beware name-alike shell commands — some projects ship a MUTATING `verify` script <!-- retired-name-ok -->; the read-only gate is in the specifics overlay). For full ticket-level validation before a PR, invoke `validate-change`.
 - Per-edit and pre-commit verification commands are auto-loaded project rules; the tooling traps that make them lie (OOM, ambient-type false positives, formatter mismatch) are in the specifics reference.
-- **Report honestly**: what reproduced, what didn't, classification, skipped steps named as skipped, failing output included. If validating the fix in a live browser, delegate to `playwright-qa` (via `playwright-qa-validate`) rather than driving the browser in the main thread.
+- **Report honestly**: what reproduced, what didn't, classification, skipped steps named as skipped, failing output included. If validating the fix in a live browser, invoke the `validate-in-browser` skill (which delegates to the `playwright-qa` agent) rather than driving the browser in the main thread.
 
 ## Subagent prompting rules (all phases)
 

@@ -1,6 +1,6 @@
 ---
 name: validate-change
-description: This skill should be used to validate an implementation (current branch or a PR) against its ticket — "validate this change", "verify the implementation", "is this ticket done", "does this branch/PR satisfy the AC", "check the PR against TICKET-123", "run full validation", "review and test this before PR", "are we ready for review", "did I miss anything in the ticket". Orchestrates four angles — AC matrix (Met/Partial/Not Met with evidence), adversarial code review, verification command gates, and an honest outcome-first report — delegating to the project's AC-verify skill, adversarial-review, and the project's verification commands. Runs AFTER author-tests has closed the test gate; it does not author tests (author-tests), root-cause the defects it finds (debug-issue), or serve an AC-matrix-only check (use the AC-verify skill directly). Invoke proactively when an implementation is about to be declared complete, before create-pr, or when the user asks whether a change actually works.
+description: This skill should be used to validate an implementation (current branch or a PR) against its ticket — "validate this change", "is this ticket done", "does this branch/PR satisfy the AC", "check the PR against TICKET-123", "are we ready for review", "did I miss anything in the ticket". Orchestrates four angles: AC matrix (Met/Partial/Not Met with evidence), adversarial code review, verification command gates, and an honest outcome-first report. Runs AFTER author-tests has closed the test gate. Do NOT use to author tests (author-tests), to root-cause the defects it finds (debug-issue), or for an AC-matrix-only check (use the project's AC-verify skill directly). Invoke proactively when an implementation is about to be declared complete, or before create-pr.
 ---
 
 # Validate Change (multi-angle, honest)
@@ -128,10 +128,10 @@ unactionable.
   multiple Agent calls in one message run concurrently) — that covers AC-cluster fan-out,
   finder+refuter review, and parallel AC/review for routine tickets. Without subagents,
   run the same angles as sequential passes yourself.
-- **The Workflow tool is Claude Code-only and requires explicit user opt-in** ("use a
-  workflow", "ultracode", or a skill that mandates it) AND presence in the session's tool
-  inventory — verify at use time; subagent sessions lack it, and the templates' prompts
-  work as direct subagent prompts when it's absent. Reach for it for
+- **The Workflow tool is Claude Code-only, requires explicit user opt-in** ("use a
+  workflow", "ultracode", or a skill that mandates it), **and must be present in the
+  session's tool inventory** — verify at use time; subagent sessions in particular lack it,
+  and when it is absent the templates' prompts work as plain subagent prompts. Reach for it for
   audit/migration/review-scale validation with opt-in; otherwise briefly offer it and
   proceed with direct fan-out. Templates: `references/workflow-templates.md`.
 - **Subagent prompts must carry their own context** — subagents do not inherit the

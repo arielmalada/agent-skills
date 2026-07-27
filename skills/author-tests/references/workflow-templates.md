@@ -2,7 +2,9 @@
 
 > **Claude Code Workflow tool only.** In any other harness this file's scripts do not run — reuse the embedded prompt prose as plain subagent prompts instead.
 
-Runnable scripts for the Workflow tool. **The Workflow tool requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it). For routine tickets (1–3 test clusters), do NOT use these — invoke the authoring skills inline, or fan out with plain Agent-tool calls (multiple Agent calls in one message run concurrently). Reach for a workflow at audit/migration/review scale, and offer it briefly rather than assuming.
+Runnable scripts for the Workflow tool. **The Workflow tool requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it) **AND presence in the session's tool inventory** — verify at use time; subagent sessions in particular lack it, and without it these scripts are inert: reuse their embedded prompts as plain subagent prompts.
+
+For routine tickets (1–3 test clusters), do NOT use these — invoke the authoring skills inline, or fan out with plain Agent-tool calls (multiple Agent calls in one message run concurrently). Reach for a workflow at audit/migration/review scale, and offer it briefly rather than assuming.
 
 Harness mechanics (reflect the Workflow tool API as of authoring — re-check against the tool's own cheat sheet in the session where you run these, and trust that over this file): scripts are plain JavaScript (no TS annotations). `meta` must be a pure literal. Never call `Date.now()` / `Math.random()` / argless `new Date()` inside a script — pass timestamps via `args`. Subagents' final text IS their return value: prompt for raw JSON and force it with `schema`. `agent()` returns null when the agent dies or is skipped — `.filter(Boolean)` agent-result arrays AND null-guard every singleton result before dereferencing it.
 
@@ -10,7 +12,7 @@ Harness mechanics (reflect the Workflow tool API as of authoring — re-check ag
 
 ## 1. Test-plan fan-out (one author per behavior cluster)
 
-**When to use:** a large change (5+ independent test-worthy behavior clusters) where each cluster needs its own spec/test authored, and the user opted into a workflow. **When NOT to use:** typical tickets (author inline — cheaper and keeps context); clusters that share files. E2E authors frequently touch the shared fixture file (`test-base.ts`) when registering new POMs — the template serializes e2e authoring for that reason and only parallelizes layer-disjoint work. Add `isolation: 'worktree'` only if authors must mutate the same files in parallel.
+**When to use:** a large change (5+ independent test-worthy behavior clusters) where each cluster needs its own spec/test authored, and the user opted into a workflow. **When NOT to use:** typical tickets (author inline — cheaper and keeps context); clusters that share files. E2E authors frequently touch the suite's shared fixture file when registering new POMs (path in the specifics overlay) — the template serializes e2e authoring for that reason and only parallelizes layer-disjoint work. Add `isolation: 'worktree'` only if authors must mutate the same files in parallel.
 
 ```javascript
 export const meta = {
@@ -19,9 +21,10 @@ export const meta = {
     phases: [{ title: 'Plan' }, { title: 'Author' }, { title: 'Verify' }]
 };
 
-// args: { diffRef: 'origin/<base>...HEAD', branch: 'TICKET-1234', ticket: 'TICKET-1234', today: '2026-07-03' }
+// args: { diffRef: 'origin/<base>...HEAD', branch: 'TICKET-1234', ticket: 'TICKET-1234',
+//         today: '2026-07-03', lintCmd: 'the fast lint gate command from the specifics overlay' }
 // diffRef: resolve <base> with `gh pr view --json baseRefName` first — with stacked
-// PRs, 'master...HEAD' can inflate the diff with the parent branch's work.
+// PRs, diffing against the default branch can inflate the diff with the parent branch's work.
 
 phase('Plan');
 const plan = await agent(
@@ -65,14 +68,15 @@ phase('Author');
 const conventions = `
 Branch: ${args.branch}. Conventional commits, NO ticket id in the subject.
 E2E facts (subagents don't inherit context — these are load-bearing):
-- Import test/expect from e2e/src/fixtures/test-base, never @playwright/test.
+- Import test/expect from the suite's shared fixture module (path in the specifics overlay),
+  never straight from @playwright/test.
 - The suite's run locale may differ from the product's default locale (check the specifics
   overlay) — pull text-selector strings from the run locale's translation file.
 - Seed via the project's API helper, applying the seeding traps from the specifics overlay
   (embed them here verbatim; today=${args.today} for validity-sensitive seeds).
 - Tags, lint command, and auth do-not-touch rules: from the specifics overlay (embed them here).
 Unit facts: MSW for API mocks, getByRole queries, Equivalence Partitioning, no snapshots,
-test file next to source. Run yarn lint:files on new files.
+test file next to source. Run ${args.lintCmd} on new files.
 Return raw JSON only.`;
 
 const authorSchema = {
@@ -106,7 +110,7 @@ for (const c of e2eClusters) {
     const r = await agent(
         `Invoke the write-e2e-test skill (via the Skill tool — do not paraphrase it) to author a Playwright spec for cluster
          "${c.name}" (ticket ${args.ticket}, source files: ${c.files.join(', ')}).
-         Regression specs go in e2e/tests/issues/. ${conventions}`,
+         Regression specs go in the suite's issues folder (path in the specifics overlay). ${conventions}`,
         { label: `e2e:${c.name}`, phase: 'Author', schema: authorSchema }
     );
     if (r) e2eResults.push(r);
@@ -133,7 +137,7 @@ export const meta = {
 };
 
 // args: { diffRef: 'origin/<base>...HEAD' } — resolve <base> via `gh pr view --json baseRefName`
-// (stacked PRs: a master diff misstates scope).
+// (stacked PRs: a default-branch diff misstates scope).
 
 phase('Inventory');
 const inventory = await agent(

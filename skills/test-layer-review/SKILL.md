@@ -1,6 +1,6 @@
 ---
 name: test-layer-review
-description: Use when reviewing EXISTING test files/suites for layer placement (unit / integration / e2e). Triggers on "review my e2e tests", "should this be e2e or integration", "is this test in the right place", "audit my test suite", "test pyramid review", "move tests to integration", "force: true smell", "Playwright suite is slow", "should I move this to jest". Do NOT use when authoring a new spec from scratch (use write-e2e-test) or when the user is asking which e2e tests to scope for upcoming work — both are write-e2e-test's domain. This skill operates on tests that already exist in the suite.
+description: This skill should be used when reviewing EXISTING test files/suites for layer placement (unit / integration / e2e). Triggers on "review my e2e tests", "should this be e2e or integration", "is this test in the right place", "audit my test suite", "test pyramid review", "move tests to integration", "force: true smell", "Playwright suite is slow", "should I move this to jest". Do NOT use when authoring a new spec from scratch (use write-e2e-test) or when the user is asking which e2e tests to scope for upcoming work — both are write-e2e-test's domain. This skill operates on tests that already exist in the suite.
 ---
 
 # Test Layer Review
@@ -40,9 +40,9 @@ For a high-stakes FE-only guardrail, the recommendation is **keep the e2e and ad
 
 ## Step 1: Read the spec AND the page object / helpers
 
-Don't just look at the spec file. The smells live in the helpers. A test like `await calendarDrawerPage.toggleFilter('Showings')` looks innocent in the spec, but the helper underneath might be holding the test together with `force: true` and conditional `Escape` presses.
+Don't just look at the spec file. The smells live in the helpers. A call like `await filterDrawerPage.toggleFilter('Active')` looks innocent in the spec, but the helper underneath might be holding the test together with `force: true` and conditional `Escape` presses.
 
-Also check what already exists at the unit/integration layer — if there's already a `Toolbar.view.test.tsx` and a `useFilter.test.ts`, the e2e is often duplicating coverage.
+Also check what already exists at the unit/integration layer — if the component already has a view test and its hook has a unit test, the e2e is often duplicating coverage.
 
 ## Step 2: Hunt for smells
 
@@ -60,6 +60,10 @@ The categories below are universal. The project profile may add app-specific ent
 | Asserting "either A or B happened"                                                                                                                | Test admits the UI is non-deterministic. Two valid outcomes for one click means the spec isn't pinned down.             | Talk to the dev who built it; pick one path.                                                                        |
 | Test depends on seeded backend data being present (`test.skip(eventCount === 0)`)                                                                 | Real e2e value, but flaky. Acceptable but should be rare.                                                               | Keep e2e, harden via API-seeded setup.                                                                              |
 | Text selector in non-primary locale (per project profile)                                                                                         | Translation-coupled and likely to break under locale switch                                                             | `getByRole` with the project's primary-language label                                                               |
+| `page.waitForTimeout(...)`                                                                                                                       | A sleep standing in for a condition. Always flaky; not a layer signal on its own.                                        | Replace with `expect().toBeVisible()` polling or `.waitFor({ state })` — wherever the test ends up.                 |
+| `locator.isVisible({ timeout })` used as a wait                                                                                                  | Returns immediately; the timeout does nothing, so the test races.                                                        | `waitFor({ state: 'visible' })`, in try/catch when it is a genuine feature-detection guard.                         |
+
+The smell vocabulary is shared with the `author-tests` skill, which holds the canonical catalog (it screens diffs; this skill reads the same signals for placement). Keep the two in step when either changes.
 
 The `force: true` smell is the strongest. **If a test needs `force: true` to be reliable, the test is wrong.** Lead with this when it appears.
 

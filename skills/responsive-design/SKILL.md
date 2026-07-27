@@ -1,6 +1,6 @@
 ---
 name: responsive-design
-description: Use when adapting a React + MUI/Emotion component to different viewports — "make this responsive", "full screen on mobile", "show on mobile only", "hide on desktop", "different layout on small screens", "mobile drawer", "responsive dialog", "useMediaQuery", "useIsXs", "useIsMobile", "responsive sx", "test mobile rendering", "MUI breakpoints", or when reviewing a `.tsx` view that branches on viewport. Picks the right layer (sx vs hook vs prop), the right hook, and the right test surface. Apply whenever a component must look or behave differently across phone / tablet / desktop, even when the user hasn't mentioned "responsive" explicitly.
+description: This skill should be used when adapting a React + MUI/Emotion component to different viewports — "make this responsive", "full screen on mobile", "show on mobile only", "hide on desktop", "different layout on small screens", "mobile drawer", "responsive dialog", "useMediaQuery", "useIsPhone", "useIsMobile", "responsive sx", "test mobile rendering", "MUI breakpoints", or when reviewing a `.tsx` view that branches on viewport. Picks the right layer (sx vs hook vs prop), the right hook, and the right test surface. Apply whenever a component must look or behave differently across phone / tablet / desktop, even when the user hasn't mentioned "responsive" explicitly.
 ---
 
 # Responsive Design (React + MUI / Emotion)
@@ -18,7 +18,7 @@ Match the change to the smallest layer that fits. Going up the table costs more 
 | What changes across viewports                                                              | Use                                              | Example                                                                       |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------- |
 | Layout-only: padding, gap, grid columns, direction, font size, **show/hide**               | `sx` responsive object `{ xs, sm, md }`          | `sx={{ p: { xs: 2, sm: 4 }, display: { xs: 'none', sm: 'block' } }}`          |
-| **A MUI prop value** (`fullScreen`, `variant`, `placement`, `direction`, `size`)           | Viewport hook → prop value                       | `<Dialog fullScreen={isXs} />`                                                |
+| **A MUI prop value** (`fullScreen`, `variant`, `placement`, `direction`, `size`)           | Viewport hook → prop value                       | `<Dialog fullScreen={isPhone} />`                                                |
 | **Different markup / control flow** (Drawer vs Dialog, list vs table, conditional subtree) | Viewport hook → branch in JSX                    | `{isMobile ? <MobileList /> : <DesktopTable />}`                              |
 
 **Rule of thumb:** never reach for a JS hook when an `sx` responsive object works. `sx` runs in CSS, costs zero re-renders, survives SSR, and is invisible to jsdom — which means it doesn't pollute the test surface. Use hooks when the React tree itself must differ.
@@ -31,17 +31,19 @@ Typical wrapper hook API (adapt names to the local project):
 
 | Hook                  | True when                          | Use for                                                           |
 | --------------------- | ---------------------------------- | ----------------------------------------------------------------- |
-| `useIsXs()`           | width < `sm` (default 600)         | Phone-only adaptations (fullscreen dialog, single-column)         |
+| `useIsPhone()`           | width < `sm` (default 600)         | Phone-only adaptations (fullscreen dialog, single-column)         |
 | `useIsMobile()`       | width < `md` (default 900)         | Phone + tablet adaptations (collapsed sidebar, hamburger menu)    |
 | `useIsTablet()`       | only `sm` (600–900)                | Rare; tablet-only carve-out                                       |
 | `useIsDesktop()`      | width ≥ `md`                       | Desktop-only enrichments                                          |
-| `useIsDesktopWide()`  | width ≥ `lg`                       | Wide-screen-only enrichments                                      |
+| `useIsLargeDesktop()`  | width ≥ `lg`                       | Wide-screen-only enrichments                                      |
 
 When the project doesn't have a wrapper, **build one** (~10 lines over MUI's `useMediaQuery`) rather than scattering `useMediaQuery(theme.breakpoints.down('sm'))` calls. It pays back the first time anyone writes a jest test against responsive logic. A minimal template lives in `references/breakpoints-api.md`.
 
-### The most common semantic bug
+### "Mobile" in a ticket is ambiguous — resolve it against the design
 
-`useIsXs ≠ useIsMobile`. A "make this full-screen on mobile" ticket almost always means `useIsXs` (phones, <600). `useIsMobile` covers phones + tablets (<900) and is correct for "collapse the sidebar". Cross-check the design — if only a phone breakpoint exists in the mock, use `useIsXs`.
+`useIsPhone ≠ useIsMobile`, and tickets say "mobile" for both. A "make this full-screen on mobile" ticket almost always means `useIsPhone` (phones, <600); "collapse the sidebar on mobile" almost always means `useIsMobile` (phones + tablets, <900). Cross-check the design rather than the wording — if only a phone frame exists in the mock, use `useIsPhone`.
+
+Note the roster deliberately keeps device words (`phone`, `mobile`, `tablet`, `desktop`) in the convenience hooks and breakpoint tokens (`sm`, `md`, `lg`) in the primitives underneath. A convenience hook named after a token — `useIsXs` and friends <!-- retired-name-ok --> — reintroduces the theme vocabulary the wrapper exists to hide, and silently changes meaning across MUI majors (`down('sm')` was `<= sm` in v4, `< sm` in v5).
 
 ## Patterns by Intent
 
@@ -65,8 +67,8 @@ Always `sx`:
 
 Hook drives the prop, JSX stays single-branch:
 ```tsx
-const isXs = useIsXs();
-return <Dialog fullScreen={isXs} maxWidth={isXs ? false : 'xs'} {...rest} />;
+const isPhone = useIsPhone();
+return <Dialog fullScreen={isPhone} maxWidth={isPhone ? false : 'xs'} {...rest} />;
 ```
 
 Cleanest pattern when the MUI component already exposes the prop needed.
@@ -76,10 +78,10 @@ Cleanest pattern when the MUI component already exposes the prop needed.
 When the shared dialog component does not expose `fullScreen` (e.g. an in-house wrapper around MUI Dialog), prefer an `sx` override at the call site over modifying the shared component for one consumer's need:
 
 ```tsx
-const isXs = useIsXs();
+const isPhone = useIsPhone();
 <SharedDialog
-    maxWidth={isXs ? false : 'xs'}
-    sx={isXs ? {
+    maxWidth={isPhone ? false : 'xs'}
+    sx={isPhone ? {
         '& .MuiDialog-paper': {
             m: 0,
             width: '100%',
@@ -123,7 +125,7 @@ jsdom does not compute CSS, so `sx` effects and emotion classes are invisible to
 Use when the responsive logic is pure layout (`sx` show/hide, padding, gap). Test the default viewport only:
 ```ts
 jest.mock('@shared/screenSizes', () => ({
-    useIsXs: () => false
+    useIsPhone: () => false
 }));
 ```
 
@@ -132,14 +134,14 @@ jest.mock('@shared/screenSizes', () => ({
 Use when the JSX tree itself branches on viewport (drawer vs dialog, list vs table). Both branches need coverage:
 ```ts
 jest.mock('@shared/screenSizes', () => ({
-    useIsXs: jest.fn(() => false)
+    useIsPhone: jest.fn(() => false)
 }));
-const screenSizes = jest.requireMock('@shared/screenSizes') as { useIsXs: jest.Mock };
+const screenSizes = jest.requireMock('@shared/screenSizes') as { useIsPhone: jest.Mock };
 
-beforeEach(() => { screenSizes.useIsXs.mockReturnValue(false); });
+beforeEach(() => { screenSizes.useIsPhone.mockReturnValue(false); });
 
 it('renders the mobile drawer on xs', () => {
-    screenSizes.useIsXs.mockReturnValue(true);
+    screenSizes.useIsPhone.mockReturnValue(true);
     /* render + assert on tree differences */
 });
 ```
@@ -161,7 +163,7 @@ const ncdMock = jest.requireMock('@shared/ConfirmDialog/ConfirmDialog.view')
     as { ConfirmDialog: jest.Mock };
 
 it('forwards full-screen sx on xs', () => {
-    screenSizes.useIsXs.mockReturnValue(true);
+    screenSizes.useIsPhone.mockReturnValue(true);
     render(<MyDialog open />);
     const props = ncdMock.ConfirmDialog.mock.calls.at(-1)![0];
     expect(props.maxWidth).toBe(false);
@@ -191,12 +193,12 @@ The auth re-attachment is non-obvious — without it the test bounces to the log
 3. **Mixing `sx` responsive object AND a viewport hook for the same property** — pick one. Mixed gives drift between layout values and JS state.
 4. **Asserting on MUI internal classes** (`.MuiDialog-paperFullScreen`, `.Mui-disabled`) — breaks across MUI majors. Use the passthrough spy (Pattern 3) or `aria-disabled` / `data-testid` instead.
 5. **Resizing the JSDOM window** to trigger `useMediaQuery` — MUI listens to `matchMedia`, not `resize`. The window-resize trick silently does nothing.
-6. **Inventing a component swap** when an `sx` override or `fullScreen={isXs}` would do.
+6. **Inventing a component swap** when an `sx` override or `fullScreen={isPhone}` would do.
 
 ## Self-Check Before Committing
 
 - [ ] Right layer used (sx > prop > branch — pick smallest that fits)
-- [ ] Right hook semantics (`useIsXs` for phones, `useIsMobile` for phones+tablets)
+- [ ] Right hook semantics (`useIsPhone` for phones, `useIsMobile` for phones+tablets)
 - [ ] No raw `useMediaQuery` in app code (use the project wrapper)
 - [ ] Storybook has Mobile + Desktop stories (or `sx`-only with viewport addon)
 - [ ] Tests cover both branches (Pattern 2) OR contract is verified via spy (Pattern 3)

@@ -50,7 +50,7 @@ Fan out only where the harness supports subagents AND the cluster count is large
 
 Never parallelize e2e authors — in suites where registering a POM touches a shared fixture file (the common POM-fixture pattern), concurrent e2e authors produce lost updates on it; e2e clusters serialize. Parallelize only layer-disjoint or genuinely file-disjoint (unit) clusters.
 
-Concurrent dispatch is the default fan-out mechanism (Claude Code: multiple Agent calls in one message). The Workflow tool is Claude Code-only and requires explicit user opt-in ("use a workflow" / "ultracode" / a skill that mandates it) AND presence in the session's tool inventory (verify at use time — subagent sessions lack it; the templates' prompts work as direct subagent prompts when it's absent); reach for it only for audit/migration/review-scale test work — otherwise briefly offer it. Templates: `references/workflow-templates.md`.
+Concurrent dispatch is the default fan-out mechanism (Claude Code: multiple Agent calls in one message). **The Workflow tool is Claude Code-only, requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it), **and must be present in the session's tool inventory** — verify at use time; subagent sessions in particular lack it, and when it is absent the templates' prompts work as plain subagent prompts. Reach for it only for audit/migration/review-scale test work — otherwise briefly offer it. Templates: `references/workflow-templates.md`.
 
 ## Phase 2 — Adversarial test review (every authored test, including your own)
 
@@ -75,6 +75,10 @@ Screen every e2e diff line for:
 - `{ force: true }` — masks a real actionability bug
 - library-internal selectors (`.Mui*`, `.rbc-*`) as assertion targets — add a `data-testid` or assert `aria-*` at the source
 - `locator.isVisible({ timeout })` used as a wait — it returns immediately; use `waitFor({ state: 'visible' })` in try/catch for feature-detection guards
+- asserting "either A or B happened" — the spec admits the UI is non-deterministic; pin down which outcome is correct
+- navigating the UI N times to reach a state the test could reach directly (URL, seeded data) — slow and flake-prone
+
+This is the canonical flake-smell catalog for this repo. `test-layer-review` applies the same vocabulary as *placement* signals — keep the two lists in step when either changes.
 
 Some projects scope e2e lint separately from root lint (root lint skips e2e files entirely, and the e2e-scoped lint flags most of these smells) — run the e2e lint on every new spec; command in the specifics overlay.
 

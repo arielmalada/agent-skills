@@ -8,7 +8,7 @@ description: >-
   generate or edit Figma files; the orchestrator should still pull ONE
   get_screenshot inline for its own visual judgment.
 mode: subagent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-5
 tools:
   write: false
   edit: false

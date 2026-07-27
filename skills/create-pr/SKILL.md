@@ -28,7 +28,7 @@ Use this when a PR already exists and needs its description refreshed (e.g. afte
 
 ### U1: Get the Real Base Branch
 
-The base branch comes from the existing PR — never assume `master`. You already have it from Step 1 (`baseRefName`).
+The base branch comes from the existing PR — never assume the default branch. You already have it from Step 1 (`baseRefName`).
 
 ```bash
 git fetch origin <baseRefName> --quiet
@@ -68,16 +68,17 @@ git branch --show-current
 git status
 ```
 
-Determine the base branch. Check if the branch was cut from `master` or from another feature branch:
+Determine the base branch. Resolve the repo's default branch first — never assume it:
 
 ```bash
-git fetch origin master --quiet
-# Is master the actual base, or is this stacked on another branch?
+DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
+git fetch origin "$DEFAULT" --quiet
+# Is the default branch the actual base, or is this stacked on another branch?
 # Check if a parent ticket branch exists and this branch diverged from it
-git log origin/master..HEAD --oneline
+git log "origin/$DEFAULT..HEAD" --oneline
 ```
 
-If this is a stacked PR (branched off a parent ticket branch, not master), identify the correct base. When in doubt, ask the user.
+If this is a stacked PR (branched off a parent ticket branch rather than the default branch), identify the correct base. When in doubt, ask the user.
 
 Extract the ticket ID from the branch name.
 
@@ -185,10 +186,10 @@ IMPORTANT: Exclude mechanical bulk files from file count and insertion count whe
 ## Rules
 
 - ALWAYS check for an existing PR first — never assume create mode
-- NEVER assume `master`/`main` as base branch — get it from `gh pr view --json baseRefName` (update) or detect stacking (create)
+- NEVER assume the default branch as base — get it from `gh pr view --json baseRefName` (update), or resolve the default branch and detect stacking (create)
 - Always extract the ticket ID from the branch name
 - Always include the tracker link (and test environment URL where the project has one) in the body
 - Do not accept poor testing instructions — ask again if vague
 - Always offer "Skip / no reviewers" when asking about reviewers
-- If `gh` CLI is not installed, guide installation: `brew install gh` then `gh auth login`
+- If `gh` CLI is not installed, point at the install for the user's platform (`brew install gh`, `winget install GitHub.cli`, or the distro package), then `gh auth login`
 - Return the PR URL when done

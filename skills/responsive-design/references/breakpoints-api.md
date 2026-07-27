@@ -60,11 +60,11 @@ export const useScreenSizeOnly = (bp: Breakpoint) =>
     useMediaQuery((t: Theme) => t.breakpoints.only(bp));
 
 // Convenience hooks — most components should reach for these first
-export const useIsXs        = () => useScreenSizeDown('sm');  // phones
+export const useIsPhone        = () => useScreenSizeDown('sm');  // phones
 export const useIsMobile    = () => useScreenSizeDown('md');  // phones + tablets
 export const useIsTablet    = () => useScreenSizeOnly('sm');
 export const useIsDesktop   = () => useScreenSizeUp('md');
-export const useIsDesktopWide = () => useScreenSizeUp('lg');
+export const useIsLargeDesktop = () => useScreenSizeUp('lg');
 ```
 
 Notice the function-style `useMediaQuery((t) => ...)` form — it avoids needing a separate `useTheme()` call at each site.
@@ -73,16 +73,16 @@ Notice the function-style `useMediaQuery((t) => ...)` form — it avoids needing
 
 | Decision criterion                                            | Pick                                |
 | ------------------------------------------------------------- | ----------------------------------- |
-| Figma mocks show only a phone-sized mobile breakpoint         | `useIsXs`                           |
-| Change is destructive (fullscreen takeover, drawer-vs-dialog) | `useIsXs`                           |
+| Figma mocks show only a phone-sized mobile breakpoint         | `useIsPhone`                           |
+| Change is destructive (fullscreen takeover, drawer-vs-dialog) | `useIsPhone`                           |
 | Sidebar collapses on tablets too                              | `useIsMobile`                       |
 | Hamburger menu appears for tablets and below                  | `useIsMobile`                       |
-| Wide-screen-only enrichment (extra column, supplementary nav) | `useIsDesktopWide`                  |
+| Wide-screen-only enrichment (extra column, supplementary nav) | `useIsLargeDesktop`                  |
 | Tablet-only carve-out genuinely required                      | `useIsTablet` (rare — verify first) |
 
 ### `useIsTablet` is rarely the right answer
 
-Tablet-only logic almost always means "the desktop layout doesn't fit but the phone layout is too cramped". Express it as `useIsMobile() && !useIsXs()` only if the spec genuinely demands a third unique layout — otherwise pick desktop or mobile as the closer match.
+Tablet-only logic almost always means "the desktop layout doesn't fit but the phone layout is too cramped" — which is usually best served by picking desktop or mobile as the closer match, not by a third layout. When the spec genuinely demands a distinct tablet layout, use `useIsTablet()`; never hand-compose `useIsMobile() && !useIsPhone()`, which is the same range spelled less clearly (see Anti-Patterns #4).
 
 ## Jest Mock Template (generic)
 
@@ -90,22 +90,22 @@ Top of a test file that exercises responsive logic:
 
 ```ts
 jest.mock('<your-project>/utils/screenSizes', () => ({
-    useIsXs: jest.fn(() => false),
+    useIsPhone: jest.fn(() => false),
     useIsMobile: jest.fn(() => false),
     useIsTablet: jest.fn(() => false),
     useIsDesktop: jest.fn(() => true),
-    useIsDesktopWide: jest.fn(() => false),
+    useIsLargeDesktop: jest.fn(() => false),
     useScreenSizeUp: jest.fn(() => false),
     useScreenSizeDown: jest.fn(() => false),
     useScreenSizeOnly: jest.fn(() => false)
 }));
 
 const screenSizes = jest.requireMock('<your-project>/utils/screenSizes') as {
-    useIsXs: jest.Mock;
+    useIsPhone: jest.Mock;
 };
 
 beforeEach(() => {
-    screenSizes.useIsXs.mockReturnValue(false);
+    screenSizes.useIsPhone.mockReturnValue(false);
 });
 ```
 
@@ -120,4 +120,4 @@ If a viewport range is used in 3+ places and isn't covered by the existing hooks
 1. **`useMediaQuery` direct in app code** — breaks the mock pattern and drifts breakpoint values. Always go through the wrapper.
 2. **Hardcoded `window.innerWidth` checks** — not SSR-safe, doesn't react to resize.
 3. **Hardcoded pixel constants** in `sx` (`'@media (max-width: 600px)'`) — bypasses the theme; if breakpoints change in the theme, your component drifts.
-4. **Composing multiple hooks for a simple range** — `useIsMobile() && !useIsXs()` when "tablet" is the intent; use `useIsTablet()` instead.
+4. **Composing multiple hooks for a simple range** — `useIsMobile() && !useIsPhone()` when "tablet" is the intent; use `useIsTablet()` instead.

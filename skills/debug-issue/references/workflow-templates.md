@@ -2,7 +2,9 @@
 
 > **Claude Code Workflow tool only.** In any other harness this file's scripts do not run — reuse the embedded prompt prose as plain subagent prompts instead.
 
-The Workflow tool requires **explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it). It is also **not present in every environment** — before planning around these scripts, verify at use time that a `Workflow` tool actually appears in the current session's tool inventory (subagent sessions in particular may lack it). If it is absent, these templates are inert reference material: fall back to direct Agent fan-out per SKILL.md Phase 3. For routine bugs, prefer direct Agent-tool fan-out anyway — multiple Agent calls in one message run concurrently and cost less ceremony. Reach for these scripts when the investigation is large (4+ hypotheses, multi-stage refutation, resumability matters) AND the user has opted in; otherwise briefly offer it and move on.
+**The Workflow tool requires explicit user opt-in** ("use a workflow", "ultracode", or a skill that mandates it) **AND presence in the session's tool inventory** — verify at use time; subagent sessions in particular lack it, and without it these scripts are inert: reuse their embedded prompts as plain subagent prompts (here, the direct Agent fan-out in SKILL.md Phase 3).
+
+For routine bugs, prefer direct Agent-tool fan-out anyway — multiple Agent calls in one message run concurrently and cost less ceremony. Reach for these scripts when the investigation is large (4+ hypotheses, multi-stage refutation, resumability matters) AND the user has opted in; otherwise briefly offer it and move on.
 
 Both scripts are plain JavaScript (no TS annotations). `meta` must stay a pure literal. Never call `Date.now()`, `Math.random()`, or argless `new Date()` inside a script — pass any timestamps via `args`. Subagents return their final text; the `schema` option forces validated structured output so you never parse prose.
 
