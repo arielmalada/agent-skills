@@ -1,4 +1,4 @@
-# agent-skills
+# essentials web development agent-skills
 
 Personal agent skills and subagent definitions, usable from both **Claude Code** and **opencode**. All content in this repo is project-agnostic; anything project-specific lives in local-only overlay files that are never committed (see below).
 
@@ -22,15 +22,41 @@ Skill bodies carry methodology only and refer to project facts by **role** ("the
 
 ## The skills
 
-**Ticket conductors** (invoke each other, **under review**): `implement-feature` → `author-tests` → `validate-change` (+ `create-pr`); `debug-issue` cross-links all of them.
+Every skill stands alone — the conductors are just pre-wired sequences over the smaller ones. **Start with the single-purpose skills**: they are cheaper, they compose in any order you like, and they are the ones worth cherry-picking into an existing setup. Reach for a conductor only when you want the whole pipeline run for you.
 
-**Quality primitives** (replacements for Claude Code's built-in `code-review` / `verify` / `simplify`, usable in any harness): `adversarial-review`, `exercise-change`, `polish-code`. Conductors reference these names only.
+### Test authoring — start here
 
-**Test authoring**: `write-e2e-test` (Playwright specs, POMs, fixtures) and `unit-test` (Jest/RTL, Equivalence Partitioning) hold the per-layer methodology; `test-layer-review` decides placement for tests that already exist. `author-tests` sequences all three.
+- `write-e2e-test` — authoring a new Playwright spec, POM, or fixture: the e2e-vs-lower-layer gate, suite reconnaissance, selector hierarchy, API-first seeding, wait discipline, flake smells.
+- `unit-test` — Jest / RTL tests via Equivalence Partitioning; focused cases instead of coverage-chasing.
+- `test-layer-review` — tests that **already exist**: are they at the right layer (unit / integration / e2e)?
+- `author-tests` — conductor: runs the test gate, sequences the three above, then adversarially checks each test would actually catch its regression.
 
-**Supporting**: `commit`, `create-pr`, `responsive-design`, `validate-in-browser`.
+### Supporting — small, high-frequency, safe to adopt on their own
 
-**Agents**: `figma-reader` (cost-isolated design reading), `playwright-qa` (cost-isolated browser QA; auth arrives via an injection block from the dispatching skill's overlay), `ui-design-reviewer` (7-category view review; conventions via injection block).
+- `commit` — conventional commits; one commit per completed plan-mode task.
+- `create-pr` — create or update a PR via `gh`, with issue-tracker linking and reviewers.
+- `responsive-design` — React + MUI/Emotion across phone / tablet / desktop: which layer (sx vs hook vs prop), which hook, which test surface.
+- `validate-in-browser` — live-browser QA that delegates the driving to the cost-isolated `playwright-qa` subagent, keeping page snapshots out of the main context.
+
+### Quality primitives
+
+Drop-in replacements for Claude Code's built-in `code-review` / `verify` / `simplify`, usable in any harness. Conductors reference these by name only.
+
+- `adversarial-review` — hunt correctness bugs in a diff; every finding is verified before it is reported.
+- `exercise-change` — prove the change works at runtime with the cheapest faithful driver.
+- `polish-code` — behaviour-preserving cleanup pass over changed code; applies the safe wins.
+
+### Conductors (invoke each other)
+
+- `implement-feature` → `author-tests` → `validate-change` (+ `create-pr`) — feature ticket to PR.
+- `validate-change` — AC matrix, adversarial review, verification gates, honest report.
+- `debug-issue` — reproduce-first root-causing; cross-links all of the above.
+
+### Agents
+
+- `figma-reader` — cost-isolated design reading.
+- `playwright-qa` — cost-isolated browser QA; auth arrives via an injection block from the dispatching skill's overlay.
+- `ui-design-reviewer` — 7-category view review; conventions via injection block.
 
 ## External dependencies
 
