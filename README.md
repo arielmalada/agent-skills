@@ -33,7 +33,7 @@ Every skill stands alone — the conductors are just pre-wired sequences over th
 
 ### Supporting — small, high-frequency, safe to adopt on their own
 
-- `commit` — conventional commits; one commit per completed plan-mode task.
+- `commit` — conventional commits, with the guards: branch check, format/lint gate, no secrets, no ticket ids in subjects. Splits into one commit per unit when handed a slice plan.
 - `create-pr` — create or update a PR via `gh`, with issue-tracker linking and reviewers.
 - `responsive-design` — React + MUI/Emotion across phone / tablet / desktop: which layer (sx vs hook vs prop), which hook, which test surface.
 - `validate-in-browser` — live-browser QA that delegates the driving to the cost-isolated `playwright-qa` subagent, keeping page snapshots out of the main context.

@@ -52,7 +52,7 @@ Before non-trivial code, present a short plan (files to touch, key decisions, tr
 
 ## Phase 5 — Execution
 
-Branch = the ticket key, created from the default branch. Never commit on the default branch. Commits are conventional (`feat:`/`fix:`/`chore:`) with **no ticket id in the subject** — this personal convention beats any project rule that says otherwise; the branch name already carries the key. Use the `commit` skill per pre-sliced unit.
+Branch = the ticket key, created from the default branch — set this up **before the first edit**, so the `commit` skill's branch guard clears instead of stopping you mid-slice. Commit each pre-sliced unit via the `commit` skill; it owns the message convention, the branch guard, and the pre-commit format/lint gate, so none of that is restated here. Keep the project's format/lint commands canonical in **one** overlay and point the other at it (see the specifics roster) — duplicated commands rot apart.
 
 Per-unit loop — this is the **convention block**: follow it yourself AND embed it (with the exact commands from the specifics file) in every implementation-subagent prompt (rows restate auto-loaded rules precisely because subagents don't get them):
 
@@ -62,14 +62,13 @@ Per-unit loop — this is the **convention block**: follow it yourself AND embed
 | Translations | ALL operations via the project's translation tooling (MCP tools or skills named in the specifics roster) — never hand-edit locale JSON. Run the consistency check after key changes; locale set in the specifics overlay. |
 | Responsive UI | Cross-check the Figma mobile frame via the `responsive-design` skill before picking a breakpoint layer/hook. |
 | New view component | Stories are mandatory where the project mandates them (story-authoring skill named in the specifics roster). |
-| Before each commit | Run the project's formatter exactly as the specifics file prescribes — non-idempotent-formatter traps exist; details there. |
-| Before the FINAL commit | Run the specifics file's final-commit format order verbatim, gate on its check command, then commit. |
+| Before the FINAL commit | The per-commit format/lint gate is the `commit` skill's job. What it deliberately does *not* run is the project's whole-repo check — do that once here, in the specifics file's final-commit order verbatim, and gate on it before the last commit. |
 
 **Dispatching implementation subagents** (where the harness supports them): only when units touch **disjoint files** — overlapping units are implemented inline, in order (worktree isolation, where offered, does NOT compose with committing on the shared branch: a worktree can't check out a branch the main tree holds, and its commits wouldn't land there). Subagents don't inherit your conversation, your memory, or the auto-loaded rules — embed in each prompt: the branch name, the commit-message convention, absolute paths, what NOT to touch, the relevant traps from the specifics overlay (e.g. locale traps and import rules), and a request for a structured report back. A subagent prompt missing the branch name commits to the wrong place; one missing the locale trap writes wrong-locale selectors into the suite. **Parallel-dispatched subagents must NOT commit** — concurrent `git add`/`git commit` on the shared branch race (index.lock contention, and one agent's commit can silently absorb another's staged files). Have them edit + lint + format and report back; commit sequentially yourself afterwards. Only a solo, sequentially-run subagent may commit.
 
 **Model per unit**: where per-dispatch model selection exists, dispatch mechanical, precisely-spec'd units (translations wiring, stories, components with an exact plan slice) on a cheaper model; keep core/tricky units inline on the session model. Downgrade only when acceptance is mechanical (lint + tests + matches the plan slice) — a rework loop diagnosing a cheap model's miss costs more than the tokens saved.
 
-After each later commit on a branch with an open PR, refresh the PR description via `create-pr` so it reflects all commits.
+(The `commit` skill refreshes an open PR's description after each commit, so that propagation is handled per unit.)
 
 ## Phase 6 — Test gate and validation
 
@@ -83,7 +82,7 @@ After each later commit on a branch with an open PR, refresh the PR description 
 
 - Invoke the `create-pr` skill — when the project ships a package-scoped variant for the touched package, prefer it (details in the specifics overlay).
 - **Follow the project's tracker-linking etiquette** (specifics overlay; projects with tracker↔VCS integration often want NO manual PR comment — the integration links it, and a comment can nudge merge automation).
-- **The ticket-automation trap: never put another ticket's key** in the branch, commit subjects, or PR title (e.g. when the work includes a characterization spec for someone else's bug) — tracker↔VCS integrations auto-march *that* ticket forward with no fix shipped. Reference foreign tickets only inside file contents. (Canonical write-up: the `author-tests` skill's specifics.)
+- **The ticket-automation trap: never put another ticket's key in the branch or PR title** (e.g. when the work includes a characterization spec for someone else's bug) — tracker↔VCS integrations auto-march *that* ticket forward with no fix shipped. These two surfaces are yours; the `commit` skill guards subjects. Reference foreign tickets only inside file contents. (Canonical write-up: the `author-tests` skill's specifics.)
 - Projects with stacked PRs need the real base branch resolved before computing the diff for the description (recipe in the specifics overlay).
 
 ## Fan-out mechanics
